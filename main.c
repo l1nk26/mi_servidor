@@ -87,7 +87,6 @@ void cargar_html(int *size, char **html) {
     *size = 0;
     while (fgetc(file) != EOF) {
         *size += 1;
-        printf("size: %d\nftell: %ld\n", *size, ftell(file));
     }
     fseek(file, 0, SEEK_SET);
     *html = (char*)malloc(*size + 1);
