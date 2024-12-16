@@ -83,16 +83,17 @@ void cargar_html(int *size, char **html) {
         exit(1);
     }
 
+
     *size = 0;
     while (fgetc(file) != EOF) {
         *size += 1;
+        printf("size: %d\nftell: %ld\n", *size, ftell(file));
     }
     fseek(file, 0, SEEK_SET);
     *html = (char*)malloc(*size + 1);
     fread(*html, 1, *size, file);
     (*html)[*size] = '\0';
     fclose(file);
-    printf("html: %s\n", *html);
 }
 
 int main() {
