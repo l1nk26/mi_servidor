@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "server.h"
 
-
 #define MAX_TAM_HTML 10000
 
 void inicializar_winsock(WSADATA *wsaData) {
@@ -14,11 +13,24 @@ void inicializar_winsock(WSADATA *wsaData) {
     }
 }
 
+void crear_respuesta(char *response, char *body) {
+    int longitud = strlen(body);
+
+    char headers[200];
+    sprintf(headers, "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/html; charset=UTF-8\r\n"
+                    "Connection: close\r\n"
+                    "Content-Length: %d\r\n"
+                    "\r\n", longitud);
+
+    sprintf(response, "%s%s", headers, body);
+}
+
 int inicializar_servidor(Server* s, int puerto) {
     s-> socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    s-> puerto = puerto;
     s-> addr.sin_family = AF_INET;
     s-> addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    s-> puerto = puerto;
     s-> addr.sin_port = htons(puerto);
 
     int error = bind(s-> socket, (struct sockaddr*)&(s-> addr), sizeof(s-> addr)); // vinculando el socket con el puerto
@@ -31,16 +43,8 @@ int inicializar_servidor(Server* s, int puerto) {
 }
 int ejecutar_servidor(Server* s, char* html) {
     char response[MAX_TAM_HTML];
-    int longitud_html = strlen(html);
-
-    char headers[200];
-    sprintf(headers, "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html; charset=UTF-8\r\n"
-                    "Connection: close\r\n"
-                    "Content-Length: %d\r\n"
-                    "\r\n", longitud_html);
-
-    sprintf(response, "%s%s", headers, html);
+    
+    crear_respuesta(response, html);
 
     int error = listen(s-> socket, 1);
     if (error == SOCKET_ERROR) {
@@ -50,22 +54,19 @@ int ejecutar_servidor(Server* s, char* html) {
     int server_size = sizeof(*s);
     printf("Servidor escuchando en puerto %d\n", s-> puerto);
 
-
     while (1) {
         SOCKET clientSocket = accept(s-> socket, (struct sockaddr*)&(s-> addr), &server_size);
+        send(clientSocket, response, strlen(response), 0);
         printf("Cliente conectado\n\n");
 
         int bytes_read = recv(clientSocket, s-> buffer, BUFFER_SIZE - 1, 0);
-        send(clientSocket, response, strlen(response), 0);
-        
+
         if (bytes_read > 0) {
             s-> buffer[bytes_read] = '\0';
             printf("Mensaje recibido: %s\n", s-> buffer);
         } else {
             printf("error leyendo mensaje: %d\n", WSAGetLastError());
         }
-
-
         closesocket(clientSocket);
     }
     return 1;
