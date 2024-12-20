@@ -32,6 +32,7 @@ int inicializar_servidor(Server* s, int puerto) {
     s-> addr.sin_family = AF_INET;
     s-> addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     s-> addr.sin_port = htons(puerto);
+    s-> estado = 1;
 
     int error = bind(s-> socket, (struct sockaddr*)&(s-> addr), sizeof(s-> addr)); // vinculando el socket con el puerto
 
@@ -54,7 +55,7 @@ int ejecutar_servidor(Server* s, char* html) {
     int server_size = sizeof(*s);
     printf("Servidor escuchando en puerto %d\n", s-> puerto);
 
-    while (1) {
+    while (s-> estado) {
         SOCKET clientSocket = accept(s-> socket, (struct sockaddr*)&(s-> addr), &server_size);
         send(clientSocket, response, strlen(response), 0);
         printf("Cliente conectado\n\n");
@@ -74,4 +75,23 @@ int ejecutar_servidor(Server* s, char* html) {
 
 void limpiar_servidor(Server* s) {
     closesocket(s-> socket);
+}
+char* cargar_html() {
+    FILE *file = fopen("index.html", "r");
+    char *html;
+    if (file == NULL) {
+        printf("Error: No se pudo abrir el archivo index.html\n");
+        printf("Asegurate de que el archivo index.html existe en el directorio actual\n");
+        exit(1);
+    }
+    int size = 0;
+    while (fgetc(file) != EOF) {
+        size += 1;
+    }
+    fseek(file, 0, SEEK_SET);
+    html = (char*)malloc(size + 1);
+    fread(html, 1, size, file);
+    html[size] = '\0';
+    fclose(file);
+    return html;
 }
